@@ -1,0 +1,588 @@
+<title>Casos reales en Python</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: cabecera con avance → «cómo atacar la causa» como cadena síntoma→prueba → tablero de 12 casos filtrable → cada caso abre un modal con situación, análisis y editor de Python con pruebas. */
+:root{
+  --paper:#F1F4EE; --surface:#FBFCF8; --ink:#13292A; --muted:#4D605D; --line:#D3DBD0;
+  --accent:#2C7A0B; --accent-ink:#F6FBF1; --accent-soft:#E0EBD4;
+  --warm:#A9480F; --warm-soft:#F7E6DA;
+  --code-bg:#0F1E1F; --code-ink:#E2EBE4; --code-muted:#7F948F; --code-line:#21393A;
+  --ok:#2C7A0B; --ok-soft:#E0EBD4; --bad:#A9480F; --bad-soft:#F7E6DA;
+  --f-display:'Rubik','Trebuchet MS',Arial,sans-serif;
+  --f-body:'Nunito Sans','Segoe UI',Arial,sans-serif;
+  --f-mono:'JetBrains Mono',Consolas,'Courier New',monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0E1819; --surface:#152325; --ink:#E5ECE6; --muted:#9DAFAA; --line:#2A3C3D;
+  --accent:#7CC653; --accent-ink:#0E1819; --accent-soft:#1D3321;
+  --warm:#F09A62; --warm-soft:#3A2418;
+  --code-bg:#091213; --code-ink:#E2EBE4; --code-muted:#7F948F; --code-line:#1C3132;
+  --ok:#7CC653; --ok-soft:#1D3321; --bad:#F09A62; --bad-soft:#3A2418; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#0E1819; --surface:#152325; --ink:#E5ECE6; --muted:#9DAFAA; --line:#2A3C3D;
+  --accent:#7CC653; --accent-ink:#0E1819; --accent-soft:#1D3321;
+  --warm:#F09A62; --warm-soft:#3A2418;
+  --code-bg:#091213; --code-ink:#E2EBE4; --code-muted:#7F948F; --code-line:#1C3132;
+  --ok:#7CC653; --ok-soft:#1D3321; --bad:#F09A62; --bad-soft:#3A2418; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:17px/1.6 var(--f-body)}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 72px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+p{margin:0}
+code{font-family:var(--f-mono);font-size:.88em}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}
+.btn{font:600 15px/1 var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 16px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* Cabecera */
+header.top{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:32px;align-items:end;padding-block:12px 32px;border-bottom:1px solid var(--line)}
+header.top h1{font-size:clamp(34px,5vw,56px);font-weight:700;margin-top:10px}
+header.top .lead{color:var(--muted);margin-top:12px;max-width:60ch}
+.progress{display:flex;flex-direction:column;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.progress .num{font:600 15px var(--f-body);color:var(--muted);display:flex;justify-content:space-between;align-items:baseline;font-variant-numeric:tabular-nums}
+.progress .num b{font:700 28px var(--f-display);color:var(--ink)}
+.bar{height:10px;border-radius:99px;background:var(--accent-soft);overflow:hidden}
+.bar span{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .5s ease}
+
+section.blk{margin-top:52px}
+section.blk>header{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+section.blk h2{font-size:32px;font-weight:600}
+section.blk>header p{color:var(--muted);max-width:72ch}
+
+/* Cadena causa → solución */
+ol.chain{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;counter-reset:c}
+ol.chain li{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 16px 18px;display:flex;flex-direction:column;gap:8px}
+ol.chain li::before{counter-increment:c;content:counter(c);font:700 30px/1 var(--f-display);color:var(--accent)}
+ol.chain li:not(:last-child)::after{content:"";position:absolute;right:-12px;top:30px;width:12px;height:2px;background:var(--accent)}
+ol.chain b{font:600 18px/1.2 var(--f-display)}
+ol.chain span{font-size:15px;color:var(--muted);line-height:1.5}
+.worked{margin-top:20px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:24px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.worked h3{font-size:22px;font-weight:600;margin-bottom:8px}
+.why5{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+.why5 li{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:15.5px}
+.why5 li:last-child{border-bottom:0}
+.why5 .l{font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+.why5 li.root{background:var(--accent-soft);border-radius:8px;padding:10px 12px;border-bottom:0;margin-top:6px}
+.why5 li.root .l{color:var(--accent)}
+.rules{display:flex;flex-direction:column;gap:10px;font-size:15.5px}
+.rules p{padding-left:14px;border-left:3px solid var(--line)}
+.rules p b{color:var(--ink)}
+
+/* Tablero de casos */
+.bar2{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filters button{font:700 14px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:99px;cursor:pointer}
+.filters button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.case{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:10px;padding:18px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);position:relative}
+.case:hover{border-color:var(--accent)}
+.case:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.case .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.case .n{font:600 14px var(--f-mono);color:var(--muted)}
+.case h3{font-size:20px;font-weight:600}
+.case p{font-size:15px;color:var(--muted);line-height:1.5}
+.case .foot{margin-top:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding-top:4px}
+.chip{font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--accent-soft);color:var(--ink);white-space:nowrap}
+.chip.lv{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.chip.lv[data-l="Avanzado"]{border-color:var(--warm);color:var(--warm)}
+.status{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;color:var(--muted)}
+.status i{width:12px;height:12px;border-radius:50%;border:2px solid var(--line);display:inline-block}
+.case.done .status{color:var(--accent)} .case.done .status i{background:var(--accent);border-color:var(--accent)}
+.case.tried .status i{border-color:var(--warm)}
+
+/* Modal */
+dialog{border:0;padding:0;background:var(--paper);color:var(--ink);border-radius:16px;width:min(960px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-shadow:0 30px 80px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(8,20,20,.55);backdrop-filter:blur(3px)}
+dialog[open]{animation:pop .22s ease}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+.dlg{display:flex;flex-direction:column;max-height:calc(100dvh - 24px)}
+.dlg-head{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;padding:20px 24px 14px;border-bottom:1px solid var(--line);background:var(--surface);border-radius:16px 16px 0 0}
+.dlg-head h2{font-size:26px;font-weight:600;margin-top:4px}
+.x{border:0;background:transparent;color:var(--muted);font-size:28px;line-height:1;cursor:pointer;padding:4px 8px;border-radius:8px}
+.x:hover{color:var(--ink);background:var(--accent-soft)}
+.dlg-body{overflow:auto;padding:22px 24px 28px;display:flex;flex-direction:column;gap:22px;min-height:0;flex:1}
+.dlg-body>*{flex-shrink:0}
+.dlg-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 24px;border-top:1px solid var(--line);background:var(--surface);border-radius:0 0 16px 16px;flex-wrap:wrap}
+.dlg-foot .muted{font-size:14px}
+.part{display:flex;flex-direction:column;gap:14px}
+.part>h3{font-size:20px;font-weight:600;display:flex;align-items:center;gap:10px}
+.part>h3 .k{font:700 13px var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.story{font:500 19px/1.5 var(--f-display);border-left:4px solid var(--accent);padding:4px 0 4px 18px;max-width:70ch}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.box{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.box .l{font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.box.warn{background:var(--warm-soft);border-color:transparent}
+.box.warn .l{color:var(--warm)}
+.box ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:15px}
+label.f small{font-weight:400;color:var(--muted)}
+textarea,input[type=text]{font:16px/1.5 var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;width:100%}
+textarea{resize:vertical;min-height:64px}
+textarea:focus,input:focus{border-color:var(--accent);outline:2px solid var(--accent-soft)}
+details{border:1px dashed var(--line);border-radius:10px;padding:12px 16px;background:var(--surface)}
+details summary{cursor:pointer;font-weight:700;color:var(--accent)}
+details>*:not(summary){margin-top:10px}
+details.locked summary{color:var(--muted);cursor:not-allowed}
+.sol{margin:0;font:14px/1.6 var(--f-mono);white-space:pre;overflow-x:auto;background:var(--code-bg);color:var(--code-ink);padding:16px;border-radius:10px}
+
+/* Editor */
+.ed{border-radius:var(--r);overflow:hidden;background:var(--code-bg);color:var(--code-ink);border:1px solid var(--code-line)}
+.ed-bar{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 14px;background:var(--code-line);flex-wrap:wrap}
+.ed-bar .file{font:600 13px var(--f-mono);color:var(--code-muted)}
+.ed-bar .sp{flex:1}
+.ed-bar .btn{padding:8px 13px;font-size:14px;background:transparent;color:var(--code-ink);border-color:#3A5354}
+.ed-bar .btn.primary{background:#7CC653;border-color:#7CC653;color:#0E1819}
+.ed-bar .btn.run{background:#E2EBE4;color:#0E1819;border-color:#E2EBE4}
+.ed-main{display:flex;max-height:440px;overflow:auto}
+.gutter{margin:0;padding:14px 10px 14px 14px;font:14px/1.6 var(--f-mono);color:var(--code-muted);text-align:right;user-select:none;min-width:44px;white-space:pre}
+.code{flex:1;min-width:0;margin:0;border:0;border-radius:0;background:transparent;color:var(--code-ink);font:14px/1.6 var(--f-mono);padding:14px 14px 14px 6px;resize:none;white-space:pre;overflow:hidden;tab-size:4;min-height:0;outline:none;caret-color:#7CC653}
+.code:focus{outline:none;border:0}
+.console{border-top:1px solid var(--code-line);padding:12px 14px;font:14px/1.55 var(--f-mono);white-space:pre-wrap;word-break:break-word;min-height:52px;max-height:220px;overflow:auto;background:#0B1718}
+.console .hint{color:var(--code-muted)} .console .err{color:#FF9C7A} .console .sys{color:#7CC653}
+.results{border-top:1px solid var(--code-line);padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:#0B1718;font:13.5px/1.5 var(--f-mono)}
+.results .r{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px}
+.results .r .i{font-weight:700}
+.results .r.p .i{color:#7CC653} .results .r.f .i{color:#FF9C7A}
+.results .got{color:var(--code-muted)}
+.results .sum{font:700 15px var(--f-body);padding-top:4px}
+.ed-note{font-size:13px;color:var(--code-muted);padding:0 14px 10px;background:var(--code-bg)}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:12px 20px;border-radius:99px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+.toast.show{opacity:1;transform:translateX(-50%)}
+
+@media (max-width:980px){
+  ol.chain{grid-template-columns:repeat(2,minmax(0,1fr))}
+  ol.chain li::after{display:none}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .worked{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  header.top{grid-template-columns:minmax(0,1fr)}
+  ol.chain,.grid,.pair{grid-template-columns:minmax(0,1fr)}
+  .why5 li{grid-template-columns:minmax(0,1fr);gap:2px}
+  .dlg-body,.dlg-head{padding-inline:16px}
+  .dlg-foot{padding:10px 14px}
+  .dlg-foot .muted{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Solución de problemas mediante algoritmos · Python</p>
+      <h1>Casos reales en Python</h1>
+      <p class="lead">Doce problemas que se presentan en empresas de verdad: cartera, nómina, inventario, soporte, logística y contabilidad. En cada uno analizas la causa, diseñas la regla y la programas en Python. Las pruebas automáticas te dicen si tu algoritmo resuelve el problema.</p>
+    </div>
+    <div class="progress" aria-live="polite">
+      <div class="num"><span>Casos resueltos</span><span><b id="pDone">0</b> de <span id="pTotal">12</span></span></div>
+      <div class="bar"><span id="pBar"></span></div>
+      <div class="tools"><button class="btn primary" type="button" id="startBtn">Empezar por el caso 1</button><button class="btn" type="button" id="exportBtn">Copiar mis respuestas</button></div>
+    </div>
+  </header>
+
+  <section class="blk" aria-labelledby="h-causa">
+    <header><p class="eyebrow">Antes de programar</p><h2 id="h-causa">Cómo atacar la causa, no el síntoma</h2>
+      <p>Lo que la gente reporta casi nunca es el problema: es el síntoma. Si programas contra el síntoma, el problema vuelve con otra cara. Sigue esta cadena en cada caso.</p></header>
+    <ol class="chain">
+      <li><b>Nombra el síntoma</b><span>Lo que se ve y duele: quejas, cifras que no cuadran, retrasos.</span></li>
+      <li><b>Pregunta «¿por qué?»</b><span>Varias veces, hasta llegar a algo que puedas cambiar. Esa es la causa raíz.</span></li>
+      <li><b>Conviértela en regla</b><span>Una regla de negocio medible: «si… entonces…», con números y límites claros.</span></li>
+      <li><b>Define el algoritmo</b><span>Entradas, salidas y pasos. Una función de Python por regla.</span></li>
+      <li><b>Prueba los bordes</b><span>Caso normal, valor exacto del límite y dato inválido. Si pasa, la causa quedó atacada.</span></li>
+    </ol>
+    <div class="worked">
+      <div>
+        <p class="eyebrow">Ejemplo resuelto</p>
+        <h3>«Las ventas del reporte no cuadran con el banco»</h3>
+        <p class="muted">Así se ve la cadena aplicada. Fíjate que la solución no es «revisar el reporte con más cuidado», sino una regla que la máquina aplica siempre.</p>
+      </div>
+      <div class="rules">
+        <ul class="why5">
+          <li><span class="l">Síntoma</span><span>El reporte de ventas muestra más dinero del que llegó al banco.</span></li>
+          <li><span class="l">¿Por qué?</span><span>Hay facturas contadas dos veces.</span></li>
+          <li><span class="l">¿Por qué?</span><span>La exportación del sistema se corrió dos veces y se pegaron ambas.</span></li>
+          <li><span class="l">¿Por qué?</span><span>Nada impide que un número de factura entre repetido, y algunos llegan con espacios o en minúscula.</span></li>
+          <li class="root"><span class="l">Causa raíz</span><span>No existe una regla de unicidad para el número de factura.</span></li>
+        </ul>
+        <p><b>Regla:</b> un número de factura cuenta una sola vez, sin importar espacios ni mayúsculas.</p>
+        <p><b>Algoritmo:</b> normalizar cada número y guardar solo los que no se han visto. Es el caso 5 del tablero.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="blk" aria-labelledby="h-casos">
+    <header><p class="eyebrow">Tablero</p><h2 id="h-casos">Los 12 casos</h2>
+      <p>Cada caso tiene tres partes: la situación, tu análisis y tu programa. La solución de referencia se desbloquea cuando pasas las pruebas o después de 3 intentos.</p></header>
+    <div class="bar2"><div class="filters" id="filters" role="group" aria-label="Filtrar por nivel"></div><span class="muted" id="countTxt"></span></div>
+    <div class="grid" id="grid"></div>
+  </section>
+</div>
+
+<dialog id="dlg" aria-labelledby="dTitle">
+  <div class="dlg">
+    <div class="dlg-head"><div><p class="eyebrow" id="dEye"></p><h2 id="dTitle"></h2></div><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
+    <div class="dlg-body" id="dBody"></div>
+    <div class="dlg-foot" id="dFoot"><span class="muted">Lo que escribes se guarda en este navegador.</span><div class="tools"><button class="btn" type="button" id="prevC">← Anterior</button><button class="btn primary" type="button" id="nextC">Siguiente caso →</button></div></div>
+  </div>
+</dialog>
+
+<dialog id="exp" aria-labelledby="eTitle">
+  <div class="dlg">
+    <div class="dlg-head"><div><p class="eyebrow">Entrega</p><h2 id="eTitle">Mis respuestas</h2></div><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
+    <div class="dlg-body">
+      <label class="f" for="nombre">Tu nombre<input type="text" id="nombre" placeholder="Nombre y apellido"></label>
+      <label class="f" for="expTxt">Tu análisis y tu código de cada caso, listo para pegar en un correo o documento<textarea id="expTxt" rows="14" readonly style="font-family:var(--f-mono);font-size:13.5px"></textarea></label>
+      <div class="tools"><button class="btn primary" type="button" id="copyBtn">Copiar al portapapeles</button></div>
+    </div>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="text/plain" id="py-pre">
+import sys, json
+from browser import window
+
+class _W:
+    def __init__(self, k):
+        self.k = k
+    def write(self, t):
+        window.pyOut(str(t), self.k)
+    def flush(self):
+        pass
+
+sys.stdout = _W('out')
+sys.stderr = _W('err')
+
+def _input(prompt=''):
+    raise EOFError('en estos casos no se usa input(): prueba tu función llamándola con datos, por ejemplo print(mi_funcion(10))')
+
+_ns = {'__name__': '__main__', 'input': _input}
+_ok = True
+try:
+    exec(window.pyCode, _ns)
+except BaseException as e:
+    _ok = False
+    ln = getattr(e, 'lineno', None) if isinstance(e, SyntaxError) else None
+    tb = e.__traceback__
+    while tb is not None:
+        if tb.tb_frame.f_code.co_filename == '<string>':
+            ln = tb.tb_lineno
+        tb = tb.tb_next
+    msg = type(e).__name__ + ': ' + str(e)
+    if ln:
+        msg += '  (línea ' + str(ln) + ')'
+    sys.stderr.write(msg + '\n')
+
+if window.pyTests:
+    _res = []
+    for _expr, _exp in json.loads(window.pyTests):
+        _e = eval(_exp, {})
+        if not _ok:
+            _res.append([_expr, 'no se pudo probar: el código tiene un error', repr(_e), False])
+            continue
+        try:
+            _g = eval(_expr, _ns)
+            if isinstance(_e, (str, list, bool)) or isinstance(_g, (str, bool, list)) or _g is None:
+                _p = (_g == _e)
+            else:
+                try:
+                    _p = abs(float(_g) - float(_e)) < 0.005
+                except Exception:
+                    _p = False
+            _res.append([_expr, repr(_g), repr(_e), _p])
+        except BaseException as _x:
+            _res.append([_expr, type(_x).__name__ + ': ' + str(_x), repr(_e), False])
+    window.pyResult(json.dumps(_res))
+</script>
+
+<script>
+(function(){
+"use strict";
+const DATA={"sol": {"cartera": "def clasificar_cartera(dias_mora):\n    if dias_mora <= 0:\n        return \"Al día\"\n    elif dias_mora <= 30:\n        return \"1-30 días\"\n    elif dias_mora <= 60:\n        return \"31-60 días\"\n    elif dias_mora <= 90:\n        return \"61-90 días\"\n    return \"Más de 90 días\"\n", "horas": "def pago_horas_extra(valor_hora, diurnas, nocturnas):\n    pago = valor_hora * 1.25 * diurnas + valor_hora * 1.75 * nocturnas\n    return round(pago)\n", "clave": "def clave_segura(clave):\n    if len(clave) < 8:\n        return False\n    tiene_mayus = any(c.isupper() for c in clave)\n    tiene_minus = any(c.islower() for c in clave)\n    tiene_digito = any(c.isdigit() for c in clave)\n    return tiene_mayus and tiene_minus and tiene_digito\n", "tickets": "def prioridad_ticket(impacto, urgencia):\n    nivel = {\"alto\": 3, \"medio\": 2, \"bajo\": 1}\n    total = nivel[impacto.lower()] + nivel[urgencia.lower()]\n    if total >= 6:\n        return \"P1\"\n    elif total == 5:\n        return \"P2\"\n    elif total == 4:\n        return \"P3\"\n    return \"P4\"\n", "duplicados": "def eliminar_duplicados(facturas):\n    vistas = set()\n    unicas = []\n    for numero in facturas:\n        numero = numero.strip().upper()\n        if numero not in vistas:\n            vistas.add(numero)\n            unicas.append(numero)\n    return unicas\n", "asistencia": "def minutos_tarde(hora_entrada, hora_llegada, tolerancia=5):\n    h1, m1 = hora_entrada.split(\":\")\n    h2, m2 = hora_llegada.split(\":\")\n    entrada = int(h1) * 60 + int(m1)\n    llegada = int(h2) * 60 + int(m2)\n    retraso = llegada - entrada\n    if retraso <= tolerancia:\n        return 0\n    return retraso\n", "parqueadero": "import math\n\ndef cobro_parqueadero(minutos, tipo):\n    if minutos <= 15:\n        return 0\n    horas = math.ceil(minutos / 60)\n    if tipo == \"carro\":\n        return min(horas * 3000, 25000)\n    return min(horas * 1500, 12000)\n", "clientes": "def validar_cliente(nombre, correo, celular):\n    errores = []\n    if not nombre.strip():\n        errores.append(\"nombre vacío\")\n    if \"@\" not in correo or \".\" not in correo.split(\"@\")[-1]:\n        errores.append(\"correo inválido\")\n    if not (len(celular) == 10 and celular.isdigit() and celular[0] == \"3\"):\n        errores.append(\"celular inválido\")\n    return errores\n", "lotes": "def lotes_para_retirar(lotes):\n    retirar = []\n    for codigo, dias in lotes:\n        if dias <= 7:\n            retirar.append((dias, codigo))\n    retirar.sort()\n    return [codigo for dias, codigo in retirar]\n", "reorden": "def cantidad_a_pedir(stock, demanda_diaria, dias_entrega, stock_seguridad, stock_max):\n    punto_reorden = demanda_diaria * dias_entrega + stock_seguridad\n    if stock <= punto_reorden:\n        return stock_max - stock\n    return 0\n", "vehiculos": "def vehiculos_necesarios(pesos, capacidad):\n    if any(p > capacidad for p in pesos):\n        return -1\n    vehiculos = 0\n    carga = 0\n    for peso in pesos:\n        if vehiculos == 0 or carga + peso > capacidad:\n            vehiculos += 1\n            carga = 0\n        carga += peso\n    return vehiculos\n", "conciliacion": "def pendientes_conciliar(banco, contabilidad):\n    por_cruzar = list(contabilidad)\n    pendientes = []\n    for valor in banco:\n        if valor in por_cruzar:\n            por_cruzar.remove(valor)\n        else:\n            pendientes.append(valor)\n    return pendientes\n"}, "tests": {"cartera": [["clasificar_cartera(0)", "'Al día'"], ["clasificar_cartera(-3)", "'Al día'"], ["clasificar_cartera(30)", "'1-30 días'"], ["clasificar_cartera(31)", "'31-60 días'"], ["clasificar_cartera(90)", "'61-90 días'"], ["clasificar_cartera(120)", "'Más de 90 días'"]], "horas": [["pago_horas_extra(10000, 2, 0)", "25000"], ["pago_horas_extra(10000, 0, 2)", "35000"], ["pago_horas_extra(8500, 3, 1)", "46750"], ["pago_horas_extra(9000, 0, 0)", "0"]], "clave": [["clave_segura('Bodega2026')", "True"], ["clave_segura('bodega2026')", "False"], ["clave_segura('BODEGA2026')", "False"], ["clave_segura('Bodega')", "False"], ["clave_segura('Ab1')", "False"], ["clave_segura('Ventas123')", "True"]], "tickets": [["prioridad_ticket('alto', 'alto')", "'P1'"], ["prioridad_ticket('alto', 'medio')", "'P2'"], ["prioridad_ticket('Medio', 'Medio')", "'P3'"], ["prioridad_ticket('bajo', 'alto')", "'P3'"], ["prioridad_ticket('bajo', 'medio')", "'P4'"], ["prioridad_ticket('BAJO', 'bajo')", "'P4'"]], "duplicados": [["eliminar_duplicados(['FV-101', 'FV-102', 'FV-101'])", "['FV-101', 'FV-102']"], ["eliminar_duplicados(['fv-200', ' FV-200', 'FV-201 '])", "['FV-200', 'FV-201']"], ["eliminar_duplicados([])", "[]"], ["eliminar_duplicados(['FV-3', 'FV-1', 'FV-3', 'FV-2', 'FV-1'])", "['FV-3', 'FV-1', 'FV-2']"]], "asistencia": [["minutos_tarde('08:00', '08:17')", "17"], ["minutos_tarde('08:00', '08:05')", "0"], ["minutos_tarde('08:00', '08:06')", "6"], ["minutos_tarde('08:00', '07:50')", "0"], ["minutos_tarde('06:30', '07:15')", "45"], ["minutos_tarde('08:00', '08:10', tolerancia=10)", "0"]], "parqueadero": [["cobro_parqueadero(10, 'carro')", "0"], ["cobro_parqueadero(15, 'moto')", "0"], ["cobro_parqueadero(16, 'carro')", "3000"], ["cobro_parqueadero(61, 'carro')", "6000"], ["cobro_parqueadero(130, 'moto')", "4500"], ["cobro_parqueadero(600, 'carro')", "25000"], ["cobro_parqueadero(600, 'moto')", "12000"]], "clientes": [["validar_cliente('Ana Gómez', 'ana@correo.com', '3001234567')", "[]"], ["validar_cliente('  ', 'ana@correo.com', '3001234567')", "['nombre vacío']"], ["validar_cliente('Luis', 'luis.correo.com', '3001234567')", "['correo inválido']"], ["validar_cliente('Luis', 'luis@correo', '3001234567')", "['correo inválido']"], ["validar_cliente('Marta', 'marta@empresa.co', '6012345678')", "['celular inválido']"], ["validar_cliente('', 'x', '300')", "['nombre vacío', 'correo inválido', 'celular inválido']"]], "lotes": [["lotes_para_retirar([('L1', 20), ('L2', 3), ('L3', 7), ('L4', -1)])", "['L4', 'L2', 'L3']"], ["lotes_para_retirar([('A', 30), ('B', 8)])", "[]"], ["lotes_para_retirar([])", "[]"], ["lotes_para_retirar([('X', 0)])", "['X']"]], "reorden": [["cantidad_a_pedir(50, 10, 3, 20, 200)", "150"], ["cantidad_a_pedir(51, 10, 3, 20, 200)", "0"], ["cantidad_a_pedir(0, 5, 4, 10, 100)", "100"], ["cantidad_a_pedir(100, 15, 5, 30, 300)", "200"], ["cantidad_a_pedir(106, 15, 5, 30, 300)", "0"], ["cantidad_a_pedir(200, 15, 5, 30, 300)", "0"]], "vehiculos": [["vehiculos_necesarios([300, 400, 200, 500], 1000)", "2"], ["vehiculos_necesarios([], 1000)", "0"], ["vehiculos_necesarios([1000], 1000)", "1"], ["vehiculos_necesarios([600, 600, 600], 1000)", "3"], ["vehiculos_necesarios([500, 500, 1, 999], 1000)", "2"], ["vehiculos_necesarios([1200, 100], 1000)", "-1"]], "conciliacion": [["pendientes_conciliar([100, 250, 250, 80], [250, 100])", "[250, 80]"], ["pendientes_conciliar([50, 60], [50, 60])", "[]"], ["pendientes_conciliar([], [10])", "[]"], ["pendientes_conciliar([70, 70, 70], [70])", "[70, 70]"]]}, "start": {"cartera": "def clasificar_cartera(dias_mora):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(clasificar_cartera(45))\n", "horas": "def pago_horas_extra(valor_hora, diurnas, nocturnas):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(pago_horas_extra(10000, 2, 1))\n", "clave": "def clave_segura(clave):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(clave_segura(\"Bodega2026\"))\n", "tickets": "def prioridad_ticket(impacto, urgencia):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(prioridad_ticket(\"alto\", \"medio\"))\n", "duplicados": "def eliminar_duplicados(facturas):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(eliminar_duplicados([\"FV-101\", \"fv-101 \", \"FV-102\"]))\n", "asistencia": "def minutos_tarde(hora_entrada, hora_llegada, tolerancia=5):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(minutos_tarde(\"08:00\", \"08:17\"))\n", "parqueadero": "import math\n\ndef cobro_parqueadero(minutos, tipo):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(cobro_parqueadero(75, \"carro\"))\n", "clientes": "def validar_cliente(nombre, correo, celular):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(validar_cliente(\"Ana\", \"ana@correo.com\", \"3001234567\"))\n", "lotes": "def lotes_para_retirar(lotes):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(lotes_para_retirar([(\"L1\", 20), (\"L2\", 3), (\"L3\", -1)]))\n", "reorden": "def cantidad_a_pedir(stock, demanda_diaria, dias_entrega, stock_seguridad, stock_max):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(cantidad_a_pedir(50, 10, 3, 20, 200))\n", "vehiculos": "def vehiculos_necesarios(pesos, capacidad):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(vehiculos_necesarios([300, 400, 200, 500], 1000))\n", "conciliacion": "def pendientes_conciliar(banco, contabilidad):\n    # Escribe tu solución aquí\n    pass\n\n\n# Prueba con tus propios datos:\nprint(pendientes_conciliar([100, 250, 250, 80], [250, 100]))\n"}};
+const CASES=[
+ {id:'cartera',sec:'Finanzas',lv:'Básico',t:'Cartera vencida sin prioridad',fn:'clasificar_cartera(dias_mora)',
+  s:'El área de cartera de una distribuidora llama a los clientes en el orden en que aparecen en el Excel. Mientras tanto, las facturas con más de 90 días de mora siguen creciendo y algunas ya son difíciles de recuperar.',
+  sint:'La cartera vencida crece cada mes aunque el equipo hace muchas llamadas.',
+  pq:['Las facturas más viejas no se cobran a tiempo.','El equipo no sabe cuáles son las más viejas: llama en el orden del archivo.','El archivo no clasifica las facturas por edad de mora.'],
+  raiz:'No existe una clasificación por edad de mora que permita priorizar el cobro.',
+  reglas:['0 días o menos (incluso negativos, si aún no vence): «Al día»','De 1 a 30 días: «1-30 días»','De 31 a 60 días: «31-60 días»','De 61 a 90 días: «61-90 días»','Más de 90 días: «Más de 90 días»'],
+  ent:'Días de mora de una factura (número entero; puede ser 0 o negativo).',sal:'El texto del rango de mora, exactamente como aparece en las reglas.',
+  borde:'Los valores exactos 30, 60 y 90 pertenecen al rango que terminan.',
+  pista:'Usa if / elif / else en orden ascendente. Cada elif solo necesita revisar el límite superior porque los anteriores ya descartaron los valores menores.'},
+ {id:'horas',sec:'Talento humano',lv:'Básico',t:'Reclamos por horas extra',fn:'pago_horas_extra(valor_hora, diurnas, nocturnas)',
+  s:'Cada quincena los operarios reclaman porque el pago de horas extra no coincide con sus cuentas. El auxiliar de nómina las liquida a mano con calculadora, y cada mes alguien aplica un recargo distinto.',
+  sint:'Reclamos de nómina cada quincena y reprocesos de pago.',
+  pq:['El valor pagado no coincide con el que calcula el empleado.','Cada persona que liquida aplica los recargos a su manera.','El cálculo es manual y la regla no está escrita en ningún lado.'],
+  raiz:'El cálculo depende de una persona y no hay una regla fija para los recargos.',
+  reglas:['Hora extra diurna: valor de la hora × 1,25 (recargo del 25%)','Hora extra nocturna: valor de la hora × 1,75 (recargo del 75%)','El pago total se redondea al peso.'],
+  ent:'Valor de la hora ordinaria, cantidad de horas extra diurnas y cantidad de nocturnas.',sal:'Total a pagar por horas extra, redondeado al peso.',
+  borde:'Si no hay horas extra, el pago es 0. Los recargos corresponden a la legislación laboral colombiana; confírmalos con el área de nómina antes de usarlos en producción.',
+  pista:'Calcula por separado lo diurno y lo nocturno, súmalos y usa round(total).'},
+ {id:'clave',sec:'Tecnología',lv:'Básico',t:'Claves débiles en el ERP',fn:'clave_segura(clave)',
+  s:'Una auditoría encontró usuarios del ERP con claves como «123456» y «empresa». Se pidió a todos cambiarlas, pero tres meses después hay de nuevo claves débiles.',
+  sint:'La auditoría vuelve a encontrar claves débiles aunque se pidió cambiarlas.',
+  pq:['Los usuarios siguen escogiendo claves fáciles.','El sistema acepta cualquier clave que escriban.','Nunca se definió una política de claves que el sistema valide.'],
+  raiz:'El sistema no valida la clave al momento de crearla. Pedir «tener cuidado» no ataca la causa.',
+  reglas:['Mínimo 8 caracteres','Al menos una letra mayúscula','Al menos una letra minúscula','Al menos un número'],
+  ent:'La clave que el usuario quiere registrar (texto).',sal:'True si cumple las cuatro reglas; False si falla alguna.',
+  borde:'Una clave de exactamente 8 caracteres es válida si cumple lo demás.',
+  pista:'Los métodos de texto .isupper(), .islower() e .isdigit() funcionan con un solo carácter. Recorre la clave con any(...) o con un for y banderas True/False.'},
+ {id:'tickets',sec:'Soporte TI',lv:'Básico',t:'Mesa de ayuda sin prioridades',fn:'prioridad_ticket(impacto, urgencia)',
+  s:'La mesa de ayuda atiende los casos por orden de llegada. Un lunes, la caída del módulo de facturación esperó dos horas detrás de una solicitud para cambiar el fondo de pantalla.',
+  sint:'Fallas graves esperan detrás de solicitudes menores.',
+  pq:['Los casos críticos no se atienden primero.','La cola se ordena por hora de llegada.','No hay un criterio acordado para decidir qué es más importante.'],
+  raiz:'No existe una matriz de prioridad basada en impacto y urgencia.',
+  reglas:['Puntaje: alto = 3, medio = 2, bajo = 1','Total = puntaje de impacto + puntaje de urgencia','6 → «P1» · 5 → «P2» · 4 → «P3» · 3 o menos → «P4»','Debe aceptar mayúsculas o minúsculas («Alto», «ALTO»).'],
+  ent:'Impacto y urgencia como texto: «alto», «medio» o «bajo».',sal:'La prioridad: «P1», «P2», «P3» o «P4».',
+  borde:'«bajo» + «alto» suma 4, igual que «medio» + «medio»: ambos son P3.',
+  pista:'Un diccionario {"alto": 3, "medio": 2, "bajo": 1} convierte el texto en número. Usa .lower() antes de buscar.'},
+ {id:'duplicados',sec:'Ventas',lv:'Intermedio',t:'Ventas que no cuadran con el banco',fn:'eliminar_duplicados(facturas)',
+  s:'El reporte de ventas del mes muestra más dinero del que llegó al banco. Después de dos días revisando, contabilidad descubre facturas repetidas: algunas idénticas y otras con espacios o en minúscula.',
+  sint:'El reporte de ventas no cuadra con el banco.',
+  pq:['Hay facturas contadas dos veces.','La exportación se corrió dos veces y se unieron ambos archivos.','Nada impide que un número de factura entre repetido, y el formato no es uniforme.'],
+  raiz:'No hay una regla de unicidad para el número de factura ni un formato estándar.',
+  reglas:['Normalizar cada número: quitar espacios al inicio y al final, y pasar a mayúsculas','Cada número de factura aparece una sola vez','Conservar el orden en que aparece cada factura por primera vez'],
+  ent:'Lista de números de factura (textos).',sal:'Lista sin repetidos, normalizada y en el orden original.',
+  borde:'Una lista vacía devuelve una lista vacía.',
+  pista:'Usa .strip().upper() para normalizar. Lleva un conjunto (set) con los números ya vistos y una lista con el resultado.'},
+ {id:'asistencia',sec:'Talento humano',lv:'Intermedio',t:'Retardos mal descontados',fn:'minutos_tarde(hora_entrada, hora_llegada, tolerancia=5)',
+  s:'Recursos humanos revisa a mano el reporte del reloj biométrico para descontar retardos. Hay reclamos porque a unos se les descontó llegar 3 minutos tarde y a otros no se les descontaron 20.',
+  sint:'Reclamos por descuentos de retardos injustos o inconsistentes.',
+  pq:['Los descuentos no son iguales para todos.','Cada analista interpreta la tolerancia a su manera.','La regla de tolerancia no está programada; se aplica a ojo.'],
+  raiz:'La regla de tolerancia existe en el reglamento, pero no se aplica de forma automática y uniforme.',
+  reglas:['Las horas llegan como texto «HH:MM» en formato de 24 horas','Si el retraso es menor o igual a la tolerancia, no hay retardo: devuelve 0','Si llega antes de la hora, devuelve 0','Si supera la tolerancia, devuelve todos los minutos de retraso','La tolerancia por defecto es 5 minutos'],
+  ent:'Hora de entrada del turno, hora de llegada y tolerancia en minutos.',sal:'Minutos de retardo a descontar (entero).',
+  borde:'Llegar a las 08:05 con entrada 08:00 está dentro de la tolerancia: 0. A las 08:06 son 6 minutos.',
+  pista:'Convierte cada hora a minutos desde la medianoche: «08:17» → 8 × 60 + 17. Usa .split(":") e int().'},
+ {id:'parqueadero',sec:'Servicios',lv:'Intermedio',t:'Cobros distintos en el parqueadero',fn:'cobro_parqueadero(minutos, tipo)',
+  s:'El parqueadero de un centro comercial cobra según el criterio de cada cajero. Algunos redondean la fracción de hora hacia abajo y otros hacia arriba, y los clientes reclaman por cobros diferentes por el mismo tiempo.',
+  sint:'Clientes reciben cobros distintos por el mismo tiempo.',
+  pq:['Cada cajero calcula diferente.','La tarifa está en un cartel, pero no dice cómo se cobran las fracciones ni el tope.','El cobro es manual.'],
+  raiz:'La tarifa no está definida con precisión (fracciones, gratuidad, tope) ni automatizada.',
+  reglas:['Los primeros 15 minutos son gratis (15 o menos: $0)','Carro: $3.000 por hora o fracción, con tope de $25.000','Moto: $1.500 por hora o fracción, con tope de $12.000','«Hora o fracción»: 61 minutos cobran 2 horas'],
+  ent:'Minutos de permanencia y tipo de vehículo («carro» o «moto»).',sal:'Valor a cobrar en pesos.',
+  borde:'16 minutos de carro ya cobran una hora completa: $3.000. Tarifas de ejemplo para el ejercicio.',
+  pista:'math.ceil(minutos / 60) redondea hacia arriba. min(valor, tope) aplica el tope. Recuerda import math.'},
+ {id:'clientes',sec:'Mercadeo',lv:'Intermedio',t:'Campañas que rebotan',fn:'validar_cliente(nombre, correo, celular)',
+  s:'La última campaña de correo rebotó en cientos de envíos y muchos SMS no llegaron. Al revisar la base de clientes aparecen correos sin «@», celulares de 7 dígitos y registros sin nombre.',
+  sint:'Correos que rebotan y mensajes que no llegan.',
+  pq:['Los datos de contacto están mal.','Los vendedores los digitan con prisa en el formulario.','El formulario guarda cualquier cosa: no valida nada.'],
+  raiz:'El formulario de registro no valida los datos al momento de capturarlos. Limpiar la base cada mes no ataca la causa.',
+  reglas:['Nombre: no puede estar vacío ni ser solo espacios → error «nombre vacío»','Correo: debe tener «@» y al menos un punto después del «@» → error «correo inválido»','Celular: exactamente 10 dígitos y empieza por 3 → error «celular inválido»','Devuelve la lista de errores en ese orden. Si todo está bien, una lista vacía.'],
+  ent:'Nombre, correo y celular (todos como texto).',sal:'Lista con los errores encontrados.',
+  borde:'«ana@correo» no tiene punto después de la «@»: es inválido.',
+  pista:'correo.split("@")[-1] te da lo que está después de la última «@». .isdigit() revisa que sean solo dígitos.'},
+ {id:'lotes',sec:'Alimentos',lv:'Intermedio',t:'Productos vencidos en góndola',fn:'lotes_para_retirar(lotes)',
+  s:'Un supermercado recibió una sanción porque se encontraron productos vencidos en góndola. Los auxiliares revisan fechas a ojo, pasillo por pasillo, y nunca alcanzan a terminar.',
+  sint:'Aparecen productos vencidos a la venta.',
+  pq:['Los auxiliares no detectan a tiempo los lotes por vencer.','Revisan producto por producto sin saber por dónde empezar.','No hay una lista priorizada de lo que vence primero.'],
+  raiz:'No existe una lista diaria, ordenada por urgencia, de los lotes que deben retirarse.',
+  reglas:['Cada lote es una tupla (código, días para vencer)','Se retira todo lote con 7 días o menos para vencer (los vencidos tienen días negativos)','La lista va ordenada del más urgente (menos días) al menos urgente','Devuelve solo los códigos'],
+  ent:'Lista de tuplas (código, días para vencer).',sal:'Lista de códigos a retirar, del más urgente al menos urgente.',
+  borde:'Un lote con exactamente 7 días se retira; uno con 8 no.',
+  pista:'Guarda tuplas (dias, codigo) de los que cumplen, ordénalas con .sort() y luego extrae solo los códigos.'},
+ {id:'reorden',sec:'Logística',lv:'Avanzado',t:'Agotados por pedir tarde',fn:'cantidad_a_pedir(stock, demanda_diaria, dias_entrega, stock_seguridad, stock_max)',
+  s:'Una ferretería se queda sin cemento cada mes. El jefe de compras pide cuando ve la estantería casi vacía, pero el proveedor tarda varios días en entregar y en ese tiempo se pierden ventas.',
+  sint:'Productos agotados y ventas perdidas.',
+  pq:['El pedido llega cuando ya no hay stock.','Se pide cuando la estantería está casi vacía.','No se tiene en cuenta cuánto se vende mientras llega el pedido.'],
+  raiz:'No se calcula un punto de reorden que considere la demanda durante el tiempo de entrega.',
+  reglas:['Punto de reorden = demanda diaria × días de entrega del proveedor + stock de seguridad','Si el stock es menor o igual al punto de reorden, pedir lo necesario para llegar al stock máximo','Si no, pedir 0'],
+  ent:'Stock actual, demanda diaria, días de entrega, stock de seguridad y stock máximo.',sal:'Unidades a pedir.',
+  borde:'Si el stock es exactamente igual al punto de reorden, se pide.',
+  pista:'Primero calcula el punto de reorden en una variable. Después, un solo if decide.'},
+ {id:'vehiculos',sec:'Transporte',lv:'Avanzado',t:'Camiones de más o de menos',fn:'vehiculos_necesarios(pesos, capacidad)',
+  s:'Una empresa de mensajería alquila camiones cada mañana según el cálculo del coordinador. Unos días sobran camiones pagados y otros días quedan paquetes en bodega.',
+  sint:'Camiones pagados sin usar o paquetes sin despachar.',
+  pq:['La cantidad de camiones no corresponde a la carga del día.','El coordinador calcula a ojo sumando pesos aproximados.','No hay un procedimiento de carga definido.'],
+  raiz:'No existe un algoritmo de asignación de carga que respete la capacidad y el orden de la ruta.',
+  reglas:['Los paquetes se cargan en el orden de la lista (es el orden de la ruta)','Si el siguiente paquete no cabe en el camión actual, se abre un camión nuevo','Si algún paquete pesa más que la capacidad, no se puede despachar: devuelve -1','Sin paquetes, se necesitan 0 camiones'],
+  ent:'Lista de pesos en kg y capacidad de cada camión en kg.',sal:'Número de camiones necesarios (o -1).',
+  borde:'Un paquete que llena exactamente la capacidad cabe.',
+  pista:'Lleva dos variables: camiones y carga actual. Antes de sumar un paquete, revisa si carga + peso supera la capacidad.'},
+ {id:'conciliacion',sec:'Contabilidad',lv:'Avanzado',t:'Conciliación bancaria eterna',fn:'pendientes_conciliar(banco, contabilidad)',
+  s:'Contabilidad tarda tres días cada mes cruzando, línea por línea, el extracto bancario contra los registros contables. Cuando hay dos pagos del mismo valor, se confunden y hay que empezar de nuevo.',
+  sint:'El cierre contable se retrasa por la conciliación.',
+  pq:['Cruzar movimientos toma días.','Se hace a mano, línea por línea.','No hay un procedimiento que cruce cada valor una sola vez, aun cuando hay valores repetidos.'],
+  raiz:'El cruce no está definido como un algoritmo: no se sabe qué hacer con valores repetidos.',
+  reglas:['Cada valor del extracto se cruza con un valor igual de contabilidad','Cada valor de contabilidad se puede usar una sola vez','Los valores del banco que no encuentran pareja quedan pendientes','Devuelve los pendientes en el orden del extracto'],
+  ent:'Lista de valores del extracto bancario y lista de valores registrados en contabilidad.',sal:'Lista de valores del banco pendientes por conciliar.',
+  borde:'Si el banco tiene tres pagos de 70 y contabilidad solo uno, quedan dos pendientes.',
+  pista:'Haz una copia de la lista de contabilidad. Por cada valor del banco: si está en la copia, quítalo con .remove(); si no, agrégalo a pendientes.'}
+];
+CASES.forEach(c=>{c.tests=DATA.tests[c.id];c.sol=DATA.sol[c.id];c.start=DATA.start[c.id];});
+
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200);}
+
+/* Estado en este navegador */
+const KEY='casos-reales-python-v1';
+let S={f:{},code:{},done:{},tries:{},nombre:''};
+try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(o)S=Object.assign(S,o);}catch(e){}
+let st=null;function save(){clearTimeout(st);st=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}},250);}
+
+/* Tablero */
+let lvF='Todos';
+function renderGrid(){
+  const lvs=['Todos','Básico','Intermedio','Avanzado'];
+  $('#filters').innerHTML=lvs.map(l=>`<button type="button" class="${l===lvF?'on':''}" aria-pressed="${l===lvF}" data-l="${l}">${l}</button>`).join('');
+  $$('#filters button').forEach(b=>b.addEventListener('click',()=>{lvF=b.dataset.l;renderGrid();}));
+  const list=CASES.map((c,i)=>({c,i})).filter(o=>lvF==='Todos'||o.c.lv===lvF);
+  $('#grid').innerHTML=list.map(({c,i})=>{
+    const done=!!S.done[c.id], tried=!done&&(S.tries[c.id]||0)>0;
+    return `<button type="button" class="case ${done?'done':''} ${tried?'tried':''}" data-i="${i}">
+      <span class="top"><span class="n">Caso ${String(i+1).padStart(2,'0')}</span><span class="status"><i></i>${done?'Resuelto':tried?'En progreso':'Pendiente'}</span></span>
+      <h3>${esc(c.t)}</h3><p>${esc(c.sint)}</p>
+      <span class="foot"><span class="chip">${c.sec}</span><span class="chip lv" data-l="${c.lv}">${c.lv}</span></span></button>`;}).join('');
+  $$('#grid .case').forEach(b=>b.addEventListener('click',()=>openCase(+b.dataset.i)));
+  const n=CASES.filter(c=>S.done[c.id]).length;
+  $('#pDone').textContent=n;$('#pTotal').textContent=CASES.length;$('#pBar').style.width=(n/CASES.length*100)+'%';
+  $('#countTxt').textContent=`${list.length} casos`;
+  const next=CASES.findIndex(c=>!S.done[c.id]);
+  $('#startBtn').textContent=n===0?'Empezar por el caso 1':next<0?'Repasar los casos':`Seguir con el caso ${next+1}`;
+}
+$('#startBtn').addEventListener('click',()=>{const i=CASES.findIndex(c=>!S.done[c.id]);openCase(i<0?0:i);});
+
+/* Python en el navegador (Brython) */
+let pyLoad=null;
+function addScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s);});}
+function loadPy(){
+  if(!pyLoad){pyLoad=addScript('https://cdn.jsdelivr.net/npm/brython@3.14.3/brython.min.js').then(()=>addScript('https://cdn.jsdelivr.net/npm/brython@3.14.3/brython_stdlib.js')).then(()=>{window.brython({debug:0});}).catch(e=>{pyLoad=null;throw e;});}
+  return pyLoad;
+}
+const PRE=$('#py-pre').textContent;
+async function runPy(code,tests,onOut){
+  await loadPy(); let results=null;
+  window.pyOut=(t,k)=>onOut(t,k); window.pyCode=code; window.pyTests=tests?JSON.stringify(tests):''; window.pyResult=s=>{results=JSON.parse(s);};
+  try{window.__BRYTHON__.runPythonSource(PRE,{});}catch(e){onOut('Error interno del intérprete: '+(e&&e.args?e.args.join(' '):e)+'\n','err');}
+  return results;
+}
+
+/* Editor */
+function makeEditor(host,c,onResult){
+  const id=c.id;
+  host.innerHTML=`<div class="ed-bar"><span class="file">${id}.py</span><span class="sp"></span>
+    <button class="btn" type="button" data-a="reset">Restaurar</button>
+    <button class="btn run" type="button" data-a="run">Ejecutar ▶</button>
+    <button class="btn primary" type="button" data-a="test">Probar solución</button></div>
+    <div class="ed-main"><pre class="gutter" aria-hidden="true">1</pre><textarea class="code" id="code-${id}" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Código Python del caso"></textarea></div>
+    <div class="console" role="log" aria-live="polite"><span class="hint">Ejecutar corre tu código. Probar solución lo evalúa con ${c.tests.length} casos de prueba. Atajo: Ctrl + Enter.</span></div>
+    <div class="results" hidden></div>
+    <p class="ed-note">Si el programa se queda en un ciclo infinito, recarga la página: tu código queda guardado.</p>`;
+  const ta=$('.code',host),gut=$('.gutter',host),con=$('.console',host),res=$('.results',host);
+  function fit(){const n=ta.value.split('\n').length;gut.textContent=Array.from({length:n},(_,i)=>i+1).join('\n');ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';}
+  function setCode(v){ta.value=v;fit();}
+  setCode(S.code[id]!=null?S.code[id]:c.start);
+  ta.addEventListener('input',()=>{S.code[id]=ta.value;save();fit();});
+  ta.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();go(true);return;}
+    const s=ta.selectionStart,en=ta.selectionEnd,v=ta.value;
+    if(e.key==='Tab'){e.preventDefault();
+      if(e.shiftKey){const ls=v.lastIndexOf('\n',s-1)+1;const m=v.slice(ls).match(/^ {1,4}/);if(m){ta.setRangeText('',ls,ls+m[0].length,'end');}}
+      else ta.setRangeText('    ',s,en,'end');
+      ta.dispatchEvent(new Event('input'));}
+    else if(e.key==='Enter'){const ls=v.lastIndexOf('\n',s-1)+1,line=v.slice(ls,s),ind=line.match(/^ */)[0]+(/:\s*$/.test(line)?'    ':'');e.preventDefault();ta.setRangeText('\n'+ind,s,en,'end');ta.dispatchEvent(new Event('input'));}
+  });
+  function out(t,k){if(con.querySelector('.hint'))con.innerHTML='';const sp=document.createElement('span');if(k==='err')sp.className='err';else if(k==='sys')sp.className='sys';sp.textContent=t;con.appendChild(sp);con.scrollTop=con.scrollHeight;}
+  async function go(withTests){
+    const btns=$$('.ed-bar .btn',host);btns.forEach(b=>b.disabled=true);
+    con.innerHTML='';res.hidden=true;res.innerHTML='';
+    if(!window.__BRYTHON__)out('Cargando Python por primera vez (unos segundos)…\n','sys');
+    await new Promise(r=>setTimeout(r,30));
+    try{
+      await loadPy(); if(con.querySelector('.sys'))con.innerHTML='';
+      const r=await runPy(ta.value,withTests?c.tests:null,out);
+      if(!con.textContent)out(withTests?'Pruebas ejecutadas. Mira los resultados abajo.\n':'(El programa terminó sin imprimir nada. Prueba con print(...) o usa «Probar solución».)\n','sys');
+      if(withTests&&r){
+        const pass=r.filter(x=>x[3]).length;res.hidden=false;
+        res.innerHTML=r.map(([e,g,x,p])=>`<div class="r ${p?'p':'f'}"><span class="i">${p?'✓':'✗'}</span><div>${esc(e)}<br><span class="got">${p?'devolvió '+esc(g):'esperado '+esc(x)+' · obtuvo '+esc(g)}</span></div></div>`).join('')+
+          `<div class="sum" style="color:${pass===r.length?'#7CC653':'#FF9C7A'}">${pass===r.length?'¡Pasaron todas las pruebas! Caso resuelto.':`Pasaron ${pass} de ${r.length} pruebas`}</div>`;
+        onResult(pass===r.length);
+      }
+    }catch(e){out('No se pudo cargar Python. Revisa tu conexión a internet y vuelve a intentarlo.\n','err');}
+    btns.forEach(b=>b.disabled=false);
+  }
+  host.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(!a)return;
+    if(a.dataset.a==='run')go(false);else if(a.dataset.a==='test')go(true);
+    else if(a.dataset.a==='reset'){if(a.dataset.sure){delete S.code[id];save();setCode(c.start);a.textContent='Restaurar';delete a.dataset.sure;toast('Código inicial restaurado');}else{a.dataset.sure='1';a.textContent='¿Seguro? Pulsa otra vez';setTimeout(()=>{a.textContent='Restaurar';delete a.dataset.sure;},3000);}}});
+  requestAnimationFrame(fit);
+}
+
+/* Modal del caso */
+const dlg=$('#dlg');let cur=-1;
+function field(c,k,label,hint,rows){const key=c.id+'-'+k;return `<label class="f" for="f-${key}">${label}${hint?` <small>${hint}</small>`:''}<textarea id="f-${key}" data-k="${key}" rows="${rows||2}"></textarea></label>`;}
+function solBlock(c){
+  const unlocked=S.done[c.id]||(S.tries[c.id]||0)>=3;
+  return unlocked?`<details id="solBox"><summary>Ver la solución de referencia</summary><p class="muted" style="font-size:15px">Compárala con la tuya: puede haber varias soluciones correctas.</p><pre class="sol">${esc(c.sol)}</pre></details>`
+   :`<details class="locked" id="solBox"><summary>Solución de referencia bloqueada</summary><p class="muted" style="font-size:15px">Se desbloquea cuando pasas todas las pruebas o después de 3 intentos con «Probar solución». Llevas ${S.tries[c.id]||0}.</p></details>`;
+}
+function openCase(i){
+  cur=i;const c=CASES[i];
+  $('#dEye').textContent=`Caso ${String(i+1).padStart(2,'0')} · ${c.sec} · ${c.lv}`;
+  $('#dTitle').textContent=c.t;
+  $('#dBody').innerHTML=`
+   <div class="part"><h3><span class="k">1 · Situación</span></h3>
+     <p class="story">${esc(c.s)}</p>
+   </div>
+   <div class="part"><h3><span class="k">2 · Analiza</span></h3>
+     <p class="muted">Antes de ver nuestro análisis, escribe el tuyo.</p>
+     <div class="pair">${field(c,'sint','¿Cuál es el síntoma?','Lo que se ve.',2)}${field(c,'causa','¿Cuál crees que es la causa raíz?','Pregunta «¿por qué?» varias veces.',2)}</div>
+     <details><summary>Comparar con nuestro análisis</summary>
+       <ul class="why5"><li><span class="l">Síntoma</span><span>${esc(c.sint)}</span></li>${c.pq.map(p=>`<li><span class="l">¿Por qué?</span><span>${esc(p)}</span></li>`).join('')}<li class="root"><span class="l">Causa raíz</span><span>${esc(c.raiz)}</span></li></ul>
+     </details>
+   </div>
+   <div class="part"><h3><span class="k">3 · La regla que ataca la causa</span></h3>
+     <div class="box"><span class="l">Reglas de negocio</span><ul>${c.reglas.map(r=>`<li>${esc(r)}</li>`).join('')}</ul></div>
+     <div class="pair"><div class="box"><span class="l">Entradas</span><span>${esc(c.ent)}</span></div><div class="box"><span class="l">Salida</span><span>${esc(c.sal)}</span></div></div>
+     <div class="box warn"><span class="l">Ojo con el borde</span><span>${esc(c.borde)}</span></div>
+     ${field(c,'pasos','Escribe los pasos de tu algoritmo','En español, antes de programar. Un paso por línea.',4)}
+   </div>
+   <div class="part"><h3><span class="k">4 · Programa en Python</span></h3>
+     <p>Completa la función <code>${esc(c.fn)}</code>. Puedes agregar <code>print(...)</code> al final para probar tus propios datos.</p>
+     <div class="ed" id="edHost"></div>
+     <details><summary>Ver pista</summary><p>${esc(c.pista)}</p></details>
+     <div id="solWrap">${solBlock(c)}</div>
+   </div>`;
+  $$('[data-k]',dlg).forEach(el=>{el.value=S.f[el.dataset.k]||'';el.addEventListener('input',()=>{S.f[el.dataset.k]=el.value;save();});});
+  makeEditor($('#edHost'),c,ok=>{
+    S.tries[c.id]=(S.tries[c.id]||0)+1;
+    if(ok&&!S.done[c.id]){S.done[c.id]=true;toast('¡Caso resuelto!');}
+    save();renderGrid();$('#solWrap').innerHTML=solBlock(c);
+  });
+  $('#prevC').disabled=i===0;$('#nextC').disabled=i===CASES.length-1;
+  if(!dlg.open)dlg.showModal();$('#dBody').scrollTop=0;
+  loadPy().catch(()=>{});
+}
+$('#prevC').addEventListener('click',()=>{if(cur>0)openCase(cur-1);});
+$('#nextC').addEventListener('click',()=>{if(cur<CASES.length-1)openCase(cur+1);});
+$$('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target.closest('[data-close]'))d.close();else if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}}));
+
+/* Exportar respuestas */
+const exp=$('#exp');
+function buildExport(){
+  const L=['CASOS REALES EN PYTHON','Aprendiz: '+(S.nombre||'(sin nombre)'),`Casos resueltos: ${CASES.filter(c=>S.done[c.id]).length} de ${CASES.length}`,''];
+  CASES.forEach((c,i)=>{
+    const parts=[];
+    [['sint','Síntoma'],['causa','Causa raíz'],['pasos','Pasos']].forEach(([k,l])=>{const v=S.f[c.id+'-'+k];if(v&&v.trim())parts.push(`  ${l}:\n    ${v.trim().replace(/\n/g,'\n    ')}`);});
+    const code=S.code[c.id];if(code!=null&&code.trim()!==c.start.trim())parts.push('  Código:\n    '+code.replace(/\n/g,'\n    '));
+    if(parts.length||S.done[c.id]){L.push(`■ Caso ${i+1}. ${c.t}${S.done[c.id]?'  ✓ resuelto':''}`);L.push(...parts);L.push('');}
+  });
+  $('#expTxt').value=L.join('\n');
+}
+$('#exportBtn').addEventListener('click',()=>{$('#nombre').value=S.nombre||'';buildExport();exp.showModal();});
+$('#nombre').addEventListener('input',e=>{S.nombre=e.target.value;save();buildExport();});
+$('#copyBtn').addEventListener('click',()=>{const ta=$('#expTxt');const fb=()=>{ta.focus();ta.select();toast('Texto seleccionado: cópialo con Ctrl + C');};try{navigator.clipboard.writeText(ta.value).then(()=>toast('Copiado. Pégalo en un correo o documento'),fb);}catch(e){fb();}});
+
+renderGrid();
+})();
+</script>

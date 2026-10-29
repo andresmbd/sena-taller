@@ -1,0 +1,44 @@
+CASOS REALES EN PYTHON
+Aprendiz: Andres Barrios
+Casos resueltos: 1 de 12
+
+■ Caso 1. Cartera vencida sin prioridad  ✓ resuelto
+  Síntoma:
+    la discrepencia entre los clientes que estan en orden (sin deuda) y las facturas sin pagar de esos clientes que hacen la lista muy larga
+  Causa raíz:
+    Por que decidir tener en orden de llegada los clientes?
+    por que no tener los clientes que tienen mayor mora a menor?
+    por que no tener un respaldo por si los registros son muy grandes?
+    por que llegar a 90 dias de mora para reaccionar?
+    por que no saltar alarmas a los primeros 10 dias de mora del cliente?
+    
+    causa raiz: una mala implementacion de entrada de registros en el excel
+  Pasos:
+    si tiempoDeMora es igual a 0 o menos
+       imprimir: "Al día"
+    si no si tiempoDeMora es mayor o igual a 1 y menor o igual a 30
+      imprimir: "1-30 días"
+    si no si tiempoDeMora es mayor o igual a 31 y menor o igual a 60
+      imprimir: "31-60 días"
+    si no si tiempoDeMora es mayor o  igual a 61 y menor o igual a 90
+      imprimir: "61-90 días"
+    si mas de 90
+      imprimir "Más de 90 días"
+  Código:
+    def clasificar_cartera(dias_mora):
+    
+        if dias_mora <= 0:
+            return "Al día"
+        elif dias_mora >= 1 and dias_mora <= 30:
+            return "1-30 días"
+        elif dias_mora  >= 31 and dias_mora <= 60:
+            return "31-60 días"
+        elif dias_mora  >= 61 and dias_mora <= 90:
+            return "61-90 días"
+        else:
+            return "Más de 90 días"
+    
+    
+    # Prueba con tus propios datos:
+    print(clasificar_cartera(45))
+
